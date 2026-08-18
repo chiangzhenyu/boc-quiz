@@ -15,8 +15,11 @@ const workbook = XLSX.readFile(EXCEL_PATH);
 
 /**
  * Parse question sheets (sheets 2-5)
- * Pattern: question row has number in col A, followed by option rows
- * Option rows have "是" in col C to mark correct answer
+ * 
+ * Three types of questions:
+ * 1. 判断题 (True/False): No option rows. Answer is "是"/"否" in column C
+ * 2. 单选题 (Single Choice): Options in subsequent rows, one "是" in column C
+ * 3. 多选题 (Multiple Choice): Options in subsequent rows, multiple "是" in column C
  */
 function parseQuestionSheet(worksheet, categoryName) {
   const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
@@ -45,6 +48,7 @@ function parseQuestionSheet(worksheet, categoryName) {
     if (isQuestionRow) {
       // Save previous question
       if (currentQuestion && currentQuestion.options.length > 0) {
+        finalizeQuestion(currentQuestion);
         questions.push(currentQuestion);
       }
       
@@ -53,7 +57,6 @@ function parseQuestionSheet(worksheet, categoryName) {
       let difficulty = colE || '';
       
       // For sheet 2 (国内结算), the structure is slightly different
-      // col D is type, no difficulty column
       if (categoryName === '国内结算资格') {
         type = colD || '单选题';
         difficulty = '';
@@ -66,27 +69,57 @@ function parseQuestionSheet(worksheet, categoryName) {
         difficulty: difficulty,
         question: colB,
         options: [],
-        answer: -1,
+        answer: [],
         explanation: ''
       };
-    } else if (currentQuestion && colB.length > 0) {
-      // This is an option row
-      const isCorrect = colC === '是' || colC === '正确' || colC === '√';
-      const optionIndex = currentQuestion.options.length;
-      currentQuestion.options.push(colB);
       
-      if (isCorrect) {
-        currentQuestion.answer = optionIndex;
+      // Check if this is a 判断题 (True/False)
+      // 判断题 has "判断题" in type column AND answer ("是"/"否") in column C
+      if (type.includes('判断题') || (colC === '是' || colC === '否')) {
+        currentQuestion.type = '判断题';
+        currentQuestion.options = ['正确', '错误'];
+        currentQuestion.answer = (colC === '是') ? 0 : 1;
+      }
+    } else if (currentQuestion && colB.length > 0) {
+      // This is an option row (only for 单选题/多选题)
+      if (currentQuestion.type !== '判断题') {
+        const isCorrect = colC === '是' || colC === '正确' || colC === '√';
+        const optionIndex = currentQuestion.options.length;
+        currentQuestion.options.push(colB);
+        
+        if (isCorrect) {
+          currentQuestion.answer.push(optionIndex);
+        }
       }
     }
   }
   
   // Don't forget the last question
   if (currentQuestion && currentQuestion.options.length > 0) {
+    finalizeQuestion(currentQuestion);
     questions.push(currentQuestion);
   }
   
   return questions;
+}
+
+/**
+ * Finalize question - convert answer array to appropriate format
+ */
+function finalizeQuestion(q) {
+  if (q.type === '判断题') {
+    // Answer is already a single number
+    return;
+  }
+  
+  if (Array.isArray(q.answer)) {
+    if (q.answer.length === 1) {
+      q.answer = q.answer[0]; // Single choice: store as number
+    } else if (q.answer.length === 0) {
+      q.answer = -1; // No answer found
+    }
+    // If length > 1, keep as array (multi-choice)
+  }
 }
 
 /**
@@ -145,15 +178,29 @@ const questionSheets = [
   { name: '电子银行对私题库', key: '电子银行对私' }
 ];
 
+let totalQuestions = 0;
+let totalSingleChoice = 0;
+let totalMultiChoice = 0;
+let totalTrueFalse = 0;
+
 for (const sheet of questionSheets) {
   const ws = workbook.Sheets[sheet.name];
   if (ws) {
     const questions = parseQuestionSheet(ws, sheet.key);
     
+    // Count by type
+    const singleChoice = questions.filter(q => q.type === '单选题').length;
+    const multiChoice = questions.filter(q => q.type === '多选题').length;
+    const trueFalse = questions.filter(q => q.type === '判断题').length;
+    
+    totalSingleChoice += singleChoice;
+    totalMultiChoice += multiChoice;
+    totalTrueFalse += trueFalse;
+    
     // Validate: check for questions with no answer
-    const noAnswer = questions.filter(q => q.answer === -1);
+    const noAnswer = questions.filter(q => q.answer === -1 || (Array.isArray(q.answer) && q.answer.length === 0));
     if (noAnswer.length > 0) {
-      console.log(`⚠ ${sheet.key}: ${noAnswer.length} 题无答案 (共 ${questions.length} 题)`);
+      console.log(`⚠ ${sheet.key}: ${noAnswer.length} 题无答案`);
     }
     
     allData.categories.push({
@@ -163,12 +210,14 @@ for (const sheet of questionSheets) {
       questions: questions
     });
     
+    totalQuestions += questions.length;
+    
     fs.writeFileSync(
       path.join(OUTPUT_DIR, `${sheet.key}.json`),
       JSON.stringify(questions, null, 2),
       'utf-8'
     );
-    console.log(`✓ ${sheet.key}: ${questions.length} 题`);
+    console.log(`✓ ${sheet.key}: ${questions.length} 题 (单选 ${singleChoice}, 多选 ${multiChoice}, 判断 ${trueFalse})`);
   } else {
     console.log(`✗ ${sheet.key}: 未找到`);
   }
@@ -182,5 +231,8 @@ fs.writeFileSync(
 );
 
 console.log('\n=== 解析完成 ===');
-console.log(`总题目数: ${allData.categories.reduce((sum, c) => sum + c.count, 0)}`);
+console.log(`总题目数: ${totalQuestions}`);
+console.log(`单选题: ${totalSingleChoice}`);
+console.log(`多选题: ${totalMultiChoice}`);
+console.log(`判断题: ${totalTrueFalse}`);
 console.log(`知识点数: ${allData.knowledgePoints.length}`);

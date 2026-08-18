@@ -191,24 +191,29 @@ html, body {
   font-family: inherit;
 }
 
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .btn-primary {
   background: var(--primary);
   color: white;
 }
-.btn-primary:hover { background: var(--primary-hover); }
+.btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
 
 .btn-secondary {
   background: var(--bg-card);
   color: var(--text);
   border: 1px solid var(--border);
 }
-.btn-secondary:hover { background: var(--bg-card-hover); }
+.btn-secondary:hover:not(:disabled) { background: var(--bg-card-hover); }
 
 .btn-danger {
   background: var(--danger);
   color: white;
 }
-.btn-danger:hover { background: #c0392b; }
+.btn-danger:hover:not(:disabled) { background: #c0392b; }
 
 .btn-back {
   background: none;
@@ -302,7 +307,7 @@ html, body {
   line-height: 1.5;
 }
 
-.option:hover {
+.option:hover:not(.disabled) {
   border-color: var(--primary);
   background: var(--bg-card-hover);
 }
@@ -325,6 +330,10 @@ html, body {
 .option.disabled {
   cursor: default;
   opacity: 0.8;
+}
+
+.option.multi {
+  border-radius: 50px;
 }
 
 .option-letter {
@@ -353,6 +362,40 @@ html, body {
 
 .option.wrong .option-letter {
   background: var(--danger);
+  color: white;
+}
+
+.option-check {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg-input);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-top: 1px;
+  border: 2px solid var(--border);
+  transition: all 0.2s;
+}
+
+.option.multi.selected .option-check {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.option.multi.correct .option-check {
+  background: var(--success);
+  border-color: var(--success);
+  color: white;
+}
+
+.option.multi.wrong .option-check {
+  background: var(--danger);
+  border-color: var(--danger);
   color: white;
 }
 
@@ -390,7 +433,7 @@ html, body {
   text-align: center;
 }
 
-/* ===== Knowledge List ===== */
+/* ===== Knowledge Page ===== */
 .knowledge-list {
   display: flex;
   flex-direction: column;
@@ -421,6 +464,54 @@ html, body {
   display: flex;
   gap: 8px;
   margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+/* Knowledge Card for One-at-a-Time View */
+.knowledge-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+.knowledge-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.knowledge-counter {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--bg-input);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.knowledge-body h4 {
+  font-size: 14px;
+  color: var(--primary);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.knowledge-body p {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.8;
+}
+
+.knowledge-nav {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.knowledge-nav .btn {
+  flex: 1;
+  text-align: center;
 }
 
 /* ===== Stats ===== */

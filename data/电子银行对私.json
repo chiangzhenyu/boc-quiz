@@ -311,7 +311,10 @@
       "周末中行手机银行他行账户人民币转账不能实时到账。",
       "通过中行手机银行向他行人民币转账，如果对方账号或户名错误，资金无法汇出。"
     ],
-    "answer": 2,
+    "answer": [
+      1,
+      2
+    ],
     "explanation": ""
   },
   {
@@ -326,7 +329,11 @@
       "POS",
       "ATM"
     ],
-    "answer": 3,
+    "answer": [
+      0,
+      1,
+      3
+    ],
     "explanation": ""
   },
   {
@@ -341,7 +348,12 @@
       "一键绑卡到微信支付宝",
       "网点预约取号"
     ],
-    "answer": 3,
+    "answer": [
+      0,
+      1,
+      2,
+      3
+    ],
     "explanation": ""
   },
   {
@@ -356,7 +368,11 @@
       "电子银行工资单对于银行来说，以提供金融服务为切入点，可赢得企业高层对于驻点的支持，工资理财与工资单的结合营销，可以提升代发资金留存。",
       "企业在企业网银端上传工资单，企业员工在手机银行App至少隔天才能查询工资单。"
     ],
-    "answer": 2,
+    "answer": [
+      0,
+      1,
+      2
+    ],
     "explanation": ""
   },
   {
@@ -371,7 +387,12 @@
       "连云港",
       "南通"
     ],
-    "answer": 3,
+    "answer": [
+      0,
+      1,
+      2,
+      3
+    ],
     "explanation": ""
   },
   {
@@ -386,7 +407,11 @@
       "定期修改密码",
       "用生日、电话号码等做密码"
     ],
-    "answer": 2,
+    "answer": [
+      0,
+      1,
+      2
+    ],
     "explanation": ""
   },
   {
@@ -401,7 +426,11 @@
       "删除定向收款人",
       "修改定向收款人姓名"
     ],
-    "answer": 2,
+    "answer": [
+      0,
+      1,
+      2
+    ],
     "explanation": ""
   },
   {
@@ -416,7 +445,12 @@
       "申请定期",
       "借记卡临时挂失"
     ],
-    "answer": 3,
+    "answer": [
+      0,
+      1,
+      2,
+      3
+    ],
     "explanation": ""
   },
   {
@@ -431,7 +465,11 @@
       "自助注册",
       "电话开通"
     ],
-    "answer": 2,
+    "answer": [
+      0,
+      1,
+      2
+    ],
     "explanation": ""
   },
   {
@@ -446,7 +484,11 @@
       "冻结账户不影响该账户作为收款账户进行资金入账",
       "冻结不影响基金定投功能"
     ],
-    "answer": 2,
+    "answer": [
+      0,
+      1,
+      2
+    ],
     "explanation": ""
   },
   {
@@ -461,7 +503,11 @@
       "通过手机银行进行境外他行汇款，手续费全免",
       "通过手机银行进行境外他行汇款，手续费按柜台收费进行9折优惠"
     ],
-    "answer": 3,
+    "answer": [
+      0,
+      1,
+      3
+    ],
     "explanation": ""
   },
   {
@@ -476,7 +522,12 @@
       "普通活期",
       "定期一本通"
     ],
-    "answer": 3,
+    "answer": [
+      0,
+      1,
+      2,
+      3
+    ],
     "explanation": ""
   },
   {
@@ -491,7 +542,11 @@
       "单次查询跨度不超过一年",
       "每日支持申请五次"
     ],
-    "answer": 3,
+    "answer": [
+      1,
+      2,
+      3
+    ],
     "explanation": ""
   },
   {
@@ -506,7 +561,12 @@
       "拼多多、抖音",
       "云闪付、数字人民币"
     ],
-    "answer": 3,
+    "answer": [
+      0,
+      1,
+      2,
+      3
+    ],
     "explanation": ""
   },
   {
@@ -521,7 +581,298 @@
       "只代替刷卡，不能代替身份证。",
       "客户就可以不带卡办理，但是用到的卡必须是手机银行关联账户才能通过手机银行扫码选择。"
     ],
-    "answer": 3,
+    "answer": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "explanation": ""
+  },
+  {
+    "id": 36,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "低",
+    "question": "手机银行可以同时在两个及两个以上设备登录。",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 1,
+    "explanation": ""
+  },
+  {
+    "id": 37,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "中",
+    "question": "手机银行可以开立电子存款证明和纸质存款证明。",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 0,
+    "explanation": ""
+  },
+  {
+    "id": 38,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "中",
+    "question": "通过手机银行单次可查询一年的交易明细。",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 1,
+    "explanation": ""
+  },
+  {
+    "id": 39,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "中",
+    "question": "自助注册的手机银行对外转账日累计限额为2万。",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 0,
+    "explanation": ""
+  },
+  {
+    "id": 40,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "中",
+    "question": "2024年11月17日后，手机银行单短信验证码支持认证金额上限调整至单笔/日累计5万。",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 0,
+    "explanation": ""
+  },
+  {
+    "id": 41,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "中",
+    "question": "客户在网点开通电子银行服务时将设置接收手机交易码短信的手机号码，若手机号码发生变更，携带有效身份证件到中国银行网点申请变更接收手机交易码的手机号码。",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 0,
+    "explanation": ""
+  },
+  {
+    "id": 42,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "中",
+    "question": "通过手机盾加手机交易码认证方式进行手机银行对外转账，最大转账限额单笔和日累计均为100万。",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 0,
+    "explanation": ""
+  },
+  {
+    "id": 43,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "中",
+    "question": "手机银行国内人民币转账手续费全免费，包括行内、跨行汇款。",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 0,
+    "explanation": ""
+  },
+  {
+    "id": 44,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "中",
+    "question": "活钱宝单只产品单个自然日快速赎回额度为1万元。",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 0,
+    "explanation": ""
+  },
+  {
+    "id": 45,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "中",
+    "question": "手机银行跨境汇款支持调用汇款模版。",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 0,
+    "explanation": ""
+  },
+  {
+    "id": 46,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "中",
+    "question": "没有中行银行卡，不可以直接自助注册开通中行手机银行（  ）",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 1,
+    "explanation": ""
+  },
+  {
+    "id": 47,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "中",
+    "question": "手机银行可以查询快捷支付开通情况。（  ）",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 0,
+    "explanation": ""
+  },
+  {
+    "id": 48,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "中",
+    "question": "手机银行贷款管理：提供在中行开办贷款的历史还款记录、逾期未还贷款、剩余应还贷款的网上查询和提前还款测算，可查询品种限于可在柜台办理的个人贷款品种。(   )",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 0,
+    "explanation": ""
+  },
+  {
+    "id": 49,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "中",
+    "question": "在手机银行上操作的投资理财风险评估的结果会限制客户买入理财产品。（  ）",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 0,
+    "explanation": ""
+  },
+  {
+    "id": 50,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "中",
+    "question": "客户可使用手机银行帮别人购汇并且跨境汇出。（  ）",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 1,
+    "explanation": ""
+  },
+  {
+    "id": 51,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "中",
+    "question": "在手机银行可进行信用卡挂失及补卡。（  ）",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 0,
+    "explanation": ""
+  },
+  {
+    "id": 52,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "中",
+    "question": "手机银行可以通过客服中心95566挂失。（  ）",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 0,
+    "explanation": ""
+  },
+  {
+    "id": 53,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "中",
+    "question": "借记卡在手机银行临时挂失后，不可以进行查询，但可以转账。（  ）",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 1,
+    "explanation": ""
+  },
+  {
+    "id": 54,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "中",
+    "question": "手机银行自助关联账户上限是20个（  ）",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 0,
+    "explanation": ""
+  },
+  {
+    "id": 55,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "中",
+    "question": "目前手机银行认证工具的推广策略是进一步加大手机盾推广力度，减少手机交易码应用，停止发放Token、SIM盾。",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 0,
+    "explanation": ""
+  },
+  {
+    "id": 56,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "中",
+    "question": "手机银行是全行的“一号工程”。",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 0,
+    "explanation": ""
+  },
+  {
+    "id": 57,
+    "category": "电子银行对私",
+    "type": "判断题",
+    "difficulty": "中",
+    "question": "手机银行一键绑卡功能将客户信息直接透传给支付平台，无需手动输入，仅输入手机交易码即可绑定开通。",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "answer": 0,
     "explanation": ""
   }
 ]

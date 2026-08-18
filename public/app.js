@@ -3,9 +3,12 @@ const state = {
   questions: [],
   currentIndex: 0,
   score: 0,
-  userAnswers: [], // { questionId, selected, correct }
+  userAnswers: [],
   wrongBook: [],
-  categoryMode: null, // null = mixed, string = category key, 'wrong' = wrong book practice
+  categoryMode: null,
+  knowledgeIndex: 0,
+  knowledgeData: [],
+  isMultiAnswer: false,
 };
 
 const STORAGE_KEY = 'boc_quiz_progress';
@@ -111,6 +114,14 @@ function resetQuiz() {
   state.userAnswers = [];
 }
 
+function isMultiChoice(q) {
+  return q.type === '多选题' || Array.isArray(q.answer);
+}
+
+function isTrueFalse(q) {
+  return q.type === '判断题';
+}
+
 function renderQuestion() {
   const q = state.questions[state.currentIndex];
   if (!q) return;
@@ -141,12 +152,37 @@ function renderQuestion() {
   // Options
   const optionsList = document.getElementById('options-list');
   const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
-  optionsList.innerHTML = q.options.map((opt, i) => `
-    <div class="option" data-index="${i}" onclick="selectOption(${i})">
-      <span class="option-letter">${letters[i]}</span>
-      <span>${opt}</span>
-    </div>
-  `).join('');
+  state.isMultiAnswer = isMultiChoice(q);
+  
+  if (isTrueFalse(q)) {
+    // True/False - use radio buttons
+    optionsList.innerHTML = q.options.map((opt, i) => `
+      <div class="option" data-index="${i}" onclick="selectOption(${i})">
+        <span class="option-letter">${letters[i]}</span>
+        <span>${opt}</span>
+      </div>
+    `).join('');
+  } else if (state.isMultiAnswer) {
+    // Multiple choice - use checkboxes
+    optionsList.innerHTML = q.options.map((opt, i) => `
+      <div class="option multi" data-index="${i}" onclick="toggleMultiOption(${i})">
+        <span class="option-check">${letters[i]}</span>
+        <span>${opt}</span>
+      </div>
+    `).join('');
+    // Add confirm button for multi-choice
+    optionsList.innerHTML += `
+      <button class="btn btn-primary" onclick="confirmMultiAnswer()" style="margin-top: 12px;">确认选择</button>
+    `;
+  } else {
+    // Single choice - use radio buttons
+    optionsList.innerHTML = q.options.map((opt, i) => `
+      <div class="option" data-index="${i}" onclick="selectOption(${i})">
+        <span class="option-letter">${letters[i]}</span>
+        <span>${opt}</span>
+      </div>
+    `).join('');
+  }
 
   // Hide feedback
   document.getElementById('answer-feedback').style.display = 'none';
@@ -163,17 +199,64 @@ function renderQuestion() {
 
 function selectOption(index) {
   const q = state.questions[state.currentIndex];
-  const options = document.querySelectorAll('.option');
   
   // Check if already answered
   if (state.userAnswers[state.currentIndex]) return;
 
   const isCorrect = index === q.answer;
   
-  // Record answer
+  recordAnswer(index, isCorrect);
+  showAnswerFeedback(q, index, isCorrect);
+}
+
+function toggleMultiOption(index) {
+  const q = state.questions[state.currentIndex];
+  
+  // Check if already answered
+  if (state.userAnswers[state.currentIndex]) return;
+
+  // Toggle selection
+  const options = document.querySelectorAll('.option.multi');
+  options[index].classList.toggle('selected');
+}
+
+function confirmMultiAnswer() {
+  const q = state.questions[state.currentIndex];
+  
+  // Check if already answered
+  if (state.userAnswers[state.currentIndex]) return;
+
+  // Get selected indices
+  const selected = [];
+  const options = document.querySelectorAll('.option.multi');
+  options.forEach((opt, i) => {
+    if (opt.classList.contains('selected')) {
+      selected.push(i);
+    }
+  });
+
+  if (selected.length === 0) {
+    alert('请至少选择一个选项！');
+    return;
+  }
+
+  // Get correct answers
+  const correctAnswers = Array.isArray(q.answer) ? q.answer : [q.answer];
+  
+  // Check if all selected are correct and all correct are selected
+  const isCorrect = selected.length === correctAnswers.length && 
+    selected.every(s => correctAnswers.includes(s));
+
+  recordAnswer(selected, isCorrect);
+  showMultiAnswerFeedback(q, selected, correctAnswers, isCorrect);
+}
+
+function recordAnswer(selected, isCorrect) {
+  const q = state.questions[state.currentIndex];
+  
   state.userAnswers[state.currentIndex] = {
     questionId: q.id,
-    selected: index,
+    selected: selected,
     correct: isCorrect,
     category: q.category,
   };
@@ -189,17 +272,21 @@ function selectOption(index) {
     }
   }
 
-  // Update UI
+  saveProgress();
+  updateWrongCount();
+}
+
+function showAnswerFeedback(q, selected, isCorrect) {
+  const options = document.querySelectorAll('.option');
   options.forEach((opt, i) => {
     opt.classList.add('disabled');
     if (i === q.answer) {
       opt.classList.add('correct');
-    } else if (i === index && !isCorrect) {
+    } else if (i === selected && !isCorrect) {
       opt.classList.add('wrong');
     }
   });
 
-  // Show feedback
   const feedback = document.getElementById('answer-feedback');
   feedback.style.display = 'block';
   feedback.className = `answer-feedback ${isCorrect ? 'correct' : 'wrong'}`;
@@ -210,10 +297,29 @@ function selectOption(index) {
   const correctIdx = q.answer;
   const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
   document.getElementById('correct-answer').textContent = `正确答案：${letters[correctIdx]} ${q.options[correctIdx]}`;
+}
 
-  // Save progress
-  saveProgress();
-  updateWrongCount();
+function showMultiAnswerFeedback(q, selected, correctAnswers, isCorrect) {
+  const options = document.querySelectorAll('.option.multi');
+  options.forEach((opt, i) => {
+    opt.classList.add('disabled');
+    if (correctAnswers.includes(i)) {
+      opt.classList.add('correct');
+    } else if (selected.includes(i) && !isCorrect) {
+      opt.classList.add('wrong');
+    }
+  });
+
+  const feedback = document.getElementById('answer-feedback');
+  feedback.style.display = 'block';
+  feedback.className = `answer-feedback ${isCorrect ? 'correct' : 'wrong'}`;
+  
+  document.getElementById('feedback-icon').textContent = isCorrect ? '✅' : '❌';
+  document.getElementById('feedback-text').textContent = isCorrect ? '回答正确！' : '回答错误';
+  
+  const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+  const correctStr = correctAnswers.map(i => letters[i] + ' ' + q.options[i]).join('、');
+  document.getElementById('correct-answer').textContent = `正确答案：${correctStr}`;
 }
 
 function prevQuestion() {
@@ -256,7 +362,6 @@ function showResult() {
   document.getElementById('result-icon').textContent = icon;
   document.getElementById('result-title').textContent = title;
 
-  // Update retry button visibility
   const retryBtn = document.querySelector('.result-actions .btn-secondary');
   retryBtn.style.display = wrong > 0 ? 'block' : 'none';
 
@@ -277,21 +382,57 @@ async function showKnowledgePage() {
   try {
     const res = await fetch('/api/knowledge');
     const data = await res.json();
+    state.knowledgeData = data;
+    state.knowledgeIndex = 0;
     document.getElementById('knowledge-count').textContent = `${data.length} 条`;
-    
-    const container = document.getElementById('knowledge-list');
-    container.innerHTML = data.map(item => `
-      <div class="knowledge-item">
-        <h4>${item.knowledge.slice(0, 60)}${item.knowledge.length > 60 ? '...' : ''}</h4>
-        <p>${item.knowledge}</p>
-        <div class="knowledge-meta">
-          <span class="tag">${item.businessType}</span>
-          <span class="tag">${item.remark}</span>
-        </div>
-      </div>
-    `).join('');
+    renderKnowledge();
   } catch (e) {
     console.error('Failed to load knowledge:', e);
+  }
+}
+
+function renderKnowledge() {
+  const container = document.getElementById('knowledge-list');
+  const item = state.knowledgeData[state.knowledgeIndex];
+  
+  if (!item) {
+    container.innerHTML = '<div class="knowledge-item"><p>暂无知识点</p></div>';
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="knowledge-card">
+      <div class="knowledge-header">
+        <span class="knowledge-counter">${state.knowledgeIndex + 1} / ${state.knowledgeData.length}</span>
+      </div>
+      <div class="knowledge-body">
+        <h4>${item.businessType}</h4>
+        <p>${item.knowledge}</p>
+      </div>
+      <div class="knowledge-meta">
+        <span class="tag">${item.remark}</span>
+      </div>
+      <div class="knowledge-nav">
+        <button class="btn btn-secondary" onclick="prevKnowledge()" ${state.knowledgeIndex === 0 ? 'disabled' : ''}>上一个</button>
+        <button class="btn btn-primary" onclick="nextKnowledge()">${state.knowledgeIndex === state.knowledgeData.length - 1 ? '完成' : '下一个'}</button>
+      </div>
+    </div>
+  `;
+}
+
+function prevKnowledge() {
+  if (state.knowledgeIndex > 0) {
+    state.knowledgeIndex--;
+    renderKnowledge();
+  }
+}
+
+function nextKnowledge() {
+  if (state.knowledgeIndex < state.knowledgeData.length - 1) {
+    state.knowledgeIndex++;
+    renderKnowledge();
+  } else {
+    goHome();
   }
 }
 
@@ -308,16 +449,21 @@ function showWrongBook() {
     document.getElementById('wrongbook-actions').style.display = 'none';
   } else {
     document.getElementById('wrongbook-actions').style.display = 'flex';
-    container.innerHTML = state.wrongBook.map((q, i) => `
-      <div class="knowledge-item">
-        <h4>${q.question.slice(0, 50)}...</h4>
-        <p>${q.question}</p>
-        <div class="knowledge-meta">
-          <span class="tag">${q.category}</span>
-          <span class="tag">第 ${i + 1} 题</span>
+    container.innerHTML = state.wrongBook.map((q, i) => {
+      const correctStr = Array.isArray(q.answer) ? 
+        q.answer.map((a, idx) => `${['A','B','C','D','E','F'][a]}`).join('、') :
+        ['A','B','C','D','E','F'][q.answer];
+      return `
+        <div class="knowledge-item">
+          <h4>${q.question.slice(0, 50)}...</h4>
+          <p>${q.question}</p>
+          <div class="knowledge-meta">
+            <span class="tag">${q.category}</span>
+            <span class="tag">正确答案：${correctStr}</span>
+          </div>
         </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 }
 
@@ -341,7 +487,6 @@ function showStats() {
   const correct = state.userAnswers.filter(a => a.correct).length;
   const rate = attempted > 0 ? Math.round((correct / attempted) * 100) : 0;
   
-  // Category breakdown
   const categories = {};
   state.userAnswers.forEach(a => {
     if (!categories[a.category]) {
