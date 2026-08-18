@@ -732,19 +732,20 @@ function showSyncInput() {
 // ===== Stats Page =====
 function showStats() {
   showPage('stats');
-  
-  // Clear any existing refresh interval
-  if (state.statsRefreshInterval) {
-    clearInterval(state.statsRefreshInterval);
-  }
-  
   renderStats();
-  
-  // Auto-refresh every 2 seconds
-  state.statsRefreshInterval = setInterval(renderStats, 2000);
 }
 
 function renderStats() {
+  // 从 localStorage 重新加载累计统计，确保数据最新
+  try {
+    const savedStats = localStorage.getItem(CUMULATIVE_STATS_KEY);
+    if (savedStats) {
+      state.cumulativeStats = JSON.parse(savedStats);
+    }
+  } catch (e) {
+    // 忽略解析错误
+  }
+  
   const attempted = state.cumulativeStats.totalAttempted;
   const correct = state.cumulativeStats.totalCorrect;
   const rate = attempted > 0 ? Math.round((correct / attempted) * 100) : 0;
@@ -764,7 +765,7 @@ function renderStats() {
     `;
   }
 
-  document.getElementById('stats-content').innerHTML = `
+  const content = `
     <div class="stat-card">
       <h3>总答题数</h3>
       <div class="value">${attempted}</div>
@@ -781,7 +782,15 @@ function renderStats() {
       <div class="label">道题</div>
     </div>
     ${categoryHtml ? '<h3 style="margin-top:16px;font-size:14px;color:var(--text-muted);">分类统计</h3>' + categoryHtml : ''}
+    <div style="margin-top:16px;text-align:center;">
+      <button class="btn btn-secondary" onclick="renderStats()">🔄 刷新统计</button>
+    </div>
   `;
+  
+  const container = document.getElementById('stats-content');
+  if (container) {
+    container.innerHTML = content;
+  }
 }
 
 // ===== Utilities =====
