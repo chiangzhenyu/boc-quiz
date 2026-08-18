@@ -20,6 +20,9 @@ const state = {
     categoryStats: {},
   },
   statsRefreshInterval: null,
+  // Settings
+  autoAdvance: false, // 答对后自动跳转到下一题
+  autoAdvanceTimeout: null, // 自动跳转的定时器
 };
 
 const STORAGE_KEY = 'boc_quiz_progress';
@@ -27,6 +30,7 @@ const SYNC_CODE_KEY = 'boc_quiz_sync_code';
 const SYNC_STATUS_KEY = 'boc_quiz_sync_enabled';
 const CUMULATIVE_STATS_KEY = 'boc_quiz_cumulative_stats';
 const SESSION_KEY = 'boc_quiz_session';
+const AUTO_ADVANCE_KEY = 'boc_quiz_auto_advance';
 
 // ===== Storage =====
 function saveProgress() {
@@ -120,6 +124,9 @@ function loadProgress() {
       categoryStats: {},
     };
   }
+  
+  // Load auto-advance setting
+  state.autoAdvance = localStorage.getItem(AUTO_ADVANCE_KEY) === 'true';
 }
 
 // ===== Sync Functions =====
@@ -232,8 +239,17 @@ async function syncFromCloud(syncCode) {
 
 // ===== Navigation =====
 function showPage(pageId) {
+  // Clear auto-advance timeout when navigating to any page
+  clearAutoAdvanceTimeout();
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(pageId).classList.add('active');
+}
+
+function clearAutoAdvanceTimeout() {
+  if (state.autoAdvanceTimeout) {
+    clearTimeout(state.autoAdvanceTimeout);
+    state.autoAdvanceTimeout = null;
+  }
 }
 
 function goHome() {
@@ -242,6 +258,7 @@ function goHome() {
     clearInterval(state.statsRefreshInterval);
     state.statsRefreshInterval = null;
   }
+  clearAutoAdvanceTimeout(); // Clear auto-advance timeout
   showPage('home');
   loadCategories();
   updateWrongCount();
@@ -281,6 +298,7 @@ async function loadCategories() {
 // ===== Quiz Logic =====
 async function startCategory(category) {
   clearSession(); // 清除上次的进度
+  clearAutoAdvanceTimeout(); // Clear auto-advance timeout
   state.categoryMode = category;
   try {
     const res = await fetch(`/api/questions/${category}`);
@@ -296,6 +314,7 @@ async function startCategory(category) {
 
 async function startMixedMode() {
   clearSession(); // 清除上次的进度
+  clearAutoAdvanceTimeout(); // Clear auto-advance timeout
   state.categoryMode = null;
   try {
     const res = await fetch('/api/questions');
@@ -314,6 +333,7 @@ function startWrongPractice() {
     alert('错题本为空，先去做题吧！');
     return;
   }
+  clearAutoAdvanceTimeout(); // Clear auto-advance timeout
   state.categoryMode = 'wrong';
   state.questions = shuffleArray([...state.wrongBook]);
   resetQuiz();
@@ -343,6 +363,12 @@ function renderQuestion() {
   document.getElementById('current-num').textContent = state.currentIndex + 1;
   document.getElementById('total-num').textContent = state.questions.length;
   document.getElementById('score-count').textContent = state.score;
+
+  // Update auto-advance toggle state
+  const autoAdvanceCheckbox = document.getElementById('auto-advance-checkbox');
+  if (autoAdvanceCheckbox) {
+    autoAdvanceCheckbox.checked = state.autoAdvance;
+  }
 
   // Update meta
   const categoryEl = document.getElementById('q-category');
@@ -413,6 +439,11 @@ function renderQuestion() {
   }
 }
 
+function toggleAutoAdvance() {
+  state.autoAdvance = !state.autoAdvance;
+  localStorage.setItem(AUTO_ADVANCE_KEY, state.autoAdvance ? 'true' : 'false');
+}
+
 function selectOption(index) {
   const q = state.questions[state.currentIndex];
   if (state.userAnswers[state.currentIndex]) return;
@@ -421,6 +452,14 @@ function selectOption(index) {
   
   recordAnswer(index, isCorrect);
   showAnswerFeedback(q, index, isCorrect);
+  
+  // Auto-advance to next question if enabled and answer is correct
+  if (state.autoAdvance && isCorrect && state.currentIndex < state.questions.length - 1) {
+    state.autoAdvanceTimeout = setTimeout(() => {
+      state.autoAdvanceTimeout = null;
+      nextQuestion();
+    }, 1000);
+  }
 }
 
 function toggleMultiOption(index) {
@@ -454,6 +493,14 @@ function confirmMultiAnswer() {
 
   recordAnswer(selected, isCorrect);
   showMultiAnswerFeedback(q, selected, correctAnswers, isCorrect);
+  
+  // Auto-advance to next question if enabled and answer is correct
+  if (state.autoAdvance && isCorrect && state.currentIndex < state.questions.length - 1) {
+    state.autoAdvanceTimeout = setTimeout(() => {
+      state.autoAdvanceTimeout = null;
+      nextQuestion();
+    }, 1000);
+  }
 }
 
 function recordAnswer(selected, isCorrect) {
@@ -543,6 +590,7 @@ function showMultiAnswerFeedback(q, selected, correctAnswers, isCorrect) {
 }
 
 function prevQuestion() {
+  clearAutoAdvanceTimeout(); // Clear auto-advance timeout
   if (state.currentIndex > 0) {
     state.currentIndex--;
     renderQuestion();
@@ -550,6 +598,7 @@ function prevQuestion() {
 }
 
 function jumpToQuestion() {
+  clearAutoAdvanceTimeout(); // Clear auto-advance timeout
   const input = document.getElementById('question-jumper');
   if (input) {
     const num = parseInt(input.value);
@@ -561,6 +610,7 @@ function jumpToQuestion() {
 }
 
 function nextQuestion() {
+  clearAutoAdvanceTimeout(); // Clear auto-advance timeout
   if (state.currentIndex < state.questions.length - 1) {
     state.currentIndex++;
     renderQuestion();

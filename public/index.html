@@ -69,6 +69,13 @@
                  onkeydown="if(event.key==='Enter') jumpToQuestion()">
         </div>
         <div class="quiz-score">✅ <span id="score-count">0</span></div>
+        <div class="auto-advance-toggle">
+          <label class="switch">
+            <input type="checkbox" id="auto-advance-checkbox" onchange="toggleAutoAdvance()">
+            <span class="slider"></span>
+          </label>
+          <span class="toggle-label">自动下一题</span>
+        </div>
       </div>
       
       <div class="quiz-container">
