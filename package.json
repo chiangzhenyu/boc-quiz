@@ -1,0 +1,14 @@
+{
+  "name": "boc-quiz-site",
+  "version": "1.0.0",
+  "description": "BOC 题库局域网答题网站",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "parse": "node parse-excel.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "xlsx": "^0.18.5"
+  }
+}

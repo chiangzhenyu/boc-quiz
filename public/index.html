@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a1a2e">
+  <title>BOC 题库练习</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Home page -->
+    <div id="home" class="page active">
+      <div class="container">
+        <div class="hero">
+          <div class="hero-icon">📚</div>
+          <h1>BOC 题库练习</h1>
+          <p class="subtitle">银行从业资格考试 · 669 题</p>
+        </div>
+        
+        <div class="section">
+          <h2 class="section-title">📝 选择分类刷题</h2>
+          <div id="category-list" class="category-grid"></div>
+        </div>
+        
+        <div class="section">
+          <h2 class="section-title">🎯 练习模式</h2>
+          <div class="mode-grid">
+            <button class="mode-card" onclick="startMixedMode()">
+              <span class="mode-icon">🎲</span>
+              <span class="mode-name">混合刷题</span>
+              <span class="mode-desc">全部题目随机</span>
+            </button>
+            <button class="mode-card" onclick="showKnowledgePage()">
+              <span class="mode-icon">📖</span>
+              <span class="mode-name">知识点</span>
+              <span class="mode-desc">厅堂服务知识点</span>
+            </button>
+            <button class="mode-card" onclick="showWrongBook()">
+              <span class="mode-icon">❌</span>
+              <span class="mode-name">错题本</span>
+              <span class="mode-desc" id="wrong-count">0 道错题</span>
+            </button>
+            <button class="mode-card" onclick="showStats()">
+              <span class="mode-icon">📊</span>
+              <span class="mode-name">统计</span>
+              <span class="mode-desc">查看刷题记录</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Quiz page -->
+    <div id="quiz" class="page">
+      <div class="quiz-header">
+        <button class="btn-back" onclick="goHome()">← 返回</button>
+        <div class="quiz-progress">
+          <span id="current-num">1</span> / <span id="total-num">10</span>
+        </div>
+        <div class="quiz-score">✅ <span id="score-count">0</span></div>
+      </div>
+      
+      <div class="quiz-container">
+        <div class="quiz-meta">
+          <span id="q-category" class="tag"></span>
+          <span id="q-difficulty" class="tag"></span>
+          <span id="q-type" class="tag"></span>
+        </div>
+        
+        <div id="question-text" class="question-text"></div>
+        
+        <div id="options-list" class="options-list"></div>
+        
+        <div id="answer-feedback" class="answer-feedback" style="display:none;">
+          <div id="feedback-icon" class="feedback-icon"></div>
+          <div id="feedback-text" class="feedback-text"></div>
+          <div id="correct-answer" class="correct-answer"></div>
+        </div>
+        
+        <div class="quiz-actions">
+          <button id="btn-prev" class="btn btn-secondary" onclick="prevQuestion()">上一题</button>
+          <button id="btn-next" class="btn btn-primary" onclick="nextQuestion()">下一题</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Knowledge page -->
+    <div id="knowledge" class="page">
+      <div class="container">
+        <div class="page-header">
+          <button class="btn-back" onclick="goHome()">← 返回</button>
+          <h2>📖 知识点汇编</h2>
+          <span id="knowledge-count" class="tag"></span>
+        </div>
+        <div id="knowledge-list" class="knowledge-list"></div>
+      </div>
+    </div>
+    
+    <!-- Wrong book page -->
+    <div id="wrongbook" class="page">
+      <div class="container">
+        <div class="page-header">
+          <button class="btn-back" onclick="goHome()">← 返回</button>
+          <h2>❌ 错题本</h2>
+          <span id="wrongbook-count" class="tag"></span>
+        </div>
+        <div id="wrongbook-list" class="knowledge-list"></div>
+        <div id="wrongbook-actions" class="actions-bar" style="display:none;">
+          <button class="btn btn-primary" onclick="startWrongPractice()">练习错题</button>
+          <button class="btn btn-danger" onclick="clearWrongBook()">清空错题</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Stats page -->
+    <div id="stats" class="page">
+      <div class="container">
+        <div class="page-header">
+          <button class="btn-back" onclick="goHome()">← 返回</button>
+          <h2>📊 刷题统计</h2>
+        </div>
+        <div id="stats-content" class="stats-content"></div>
+      </div>
+    </div>
+    
+    <!-- Result page -->
+    <div id="result" class="page">
+      <div class="container">
+        <div class="result-card">
+          <div id="result-icon" class="result-icon">🎉</div>
+          <h2 id="result-title">练习完成！</h2>
+          <div class="result-stats">
+            <div class="result-stat">
+              <span class="stat-value" id="result-total">0</span>
+              <span class="stat-label">总题数</span>
+            </div>
+            <div class="result-stat">
+              <span class="stat-value" id="result-correct">0</span>
+              <span class="stat-label">正确</span>
+            </div>
+            <div class="result-stat">
+              <span class="stat-value" id="result-wrong">0</span>
+              <span class="stat-label">错误</span>
+            </div>
+            <div class="result-stat">
+              <span class="stat-value" id="result-rate">0%</span>
+              <span class="stat-label">正确率</span>
+            </div>
+          </div>
+          <div class="result-actions">
+            <button class="btn btn-primary" onclick="goHome()">返回首页</button>
+            <button class="btn btn-secondary" onclick="retryWrong()">重做错题</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="app.js"></script>
+</body>
+</html>
