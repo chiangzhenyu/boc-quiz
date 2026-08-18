@@ -23,7 +23,15 @@ const state = {
   // Settings
   autoAdvance: false, // 答对后自动跳转到下一题
   autoAdvanceTimeout: null, // 自动跳转的定时器
+  fontSizeLevel: 2, // 字体大小等级 (0=小, 1=中, 2=大, 3=特大)
 };
+
+const FONT_SIZE_LEVELS = [
+  { level: 0, questionSize: 13, optionSize: 12, label: '小' },
+  { level: 1, questionSize: 15, optionSize: 14, label: '中' },
+  { level: 2, questionSize: 17, optionSize: 16, label: '大' },
+  { level: 3, questionSize: 20, optionSize: 18, label: '特大' },
+];
 
 const STORAGE_KEY = 'boc_quiz_progress';
 const SYNC_CODE_KEY = 'boc_quiz_sync_code';
@@ -31,6 +39,7 @@ const SYNC_STATUS_KEY = 'boc_quiz_sync_enabled';
 const CUMULATIVE_STATS_KEY = 'boc_quiz_cumulative_stats';
 const SESSION_KEY = 'boc_quiz_session';
 const AUTO_ADVANCE_KEY = 'boc_quiz_auto_advance';
+const FONT_SIZE_KEY = 'boc_quiz_font_size';
 
 // ===== Storage =====
 function saveProgress() {
@@ -127,6 +136,29 @@ function loadProgress() {
   
   // Load auto-advance setting
   state.autoAdvance = localStorage.getItem(AUTO_ADVANCE_KEY) === 'true';
+  
+  // Load font size setting
+  const savedFontSize = localStorage.getItem(FONT_SIZE_KEY);
+  if (savedFontSize !== null) {
+    state.fontSizeLevel = parseInt(savedFontSize);
+  }
+}
+
+// ===== Font Size Control =====
+function increaseFontSize() {
+  if (state.fontSizeLevel < FONT_SIZE_LEVELS.length - 1) {
+    state.fontSizeLevel++;
+    localStorage.setItem(FONT_SIZE_KEY, state.fontSizeLevel);
+    renderQuestion();
+  }
+}
+
+function decreaseFontSize() {
+  if (state.fontSizeLevel > 0) {
+    state.fontSizeLevel--;
+    localStorage.setItem(FONT_SIZE_KEY, state.fontSizeLevel);
+    renderQuestion();
+  }
 }
 
 // ===== Sync Functions =====
@@ -371,6 +403,13 @@ function renderQuestion() {
     autoAdvanceCheckbox.checked = state.autoAdvance;
   }
 
+  // Update font size display
+  const fontSizeDisplay = document.getElementById('font-size-display');
+  if (fontSizeDisplay) {
+    const currentLevel = FONT_SIZE_LEVELS.find(l => l.level === state.fontSizeLevel);
+    fontSizeDisplay.textContent = currentLevel ? currentLevel.label : '中';
+  }
+
   // Update meta
   const categoryEl = document.getElementById('q-category');
   categoryEl.textContent = q.category || '未知分类';
@@ -386,8 +425,13 @@ function renderQuestion() {
   const typeEl = document.getElementById('q-type');
   typeEl.textContent = q.type || '单选题';
 
+  // Apply font size
+  const currentFontLevel = FONT_SIZE_LEVELS.find(l => l.level === state.fontSizeLevel) || FONT_SIZE_LEVELS[2];
+
   // Question text
-  document.getElementById('question-text').textContent = q.question;
+  const questionText = document.getElementById('question-text');
+  questionText.textContent = q.question;
+  questionText.style.fontSize = currentFontLevel.questionSize + 'px';
 
   // Options
   const optionsList = document.getElementById('options-list');
@@ -396,14 +440,14 @@ function renderQuestion() {
   
   if (isTrueFalse(q)) {
     optionsList.innerHTML = q.options.map((opt, i) => `
-      <div class="option" data-index="${i}" onclick="selectOption(${i})">
+      <div class="option" data-index="${i}" onclick="selectOption(${i})" style="font-size:${currentFontLevel.optionSize}px">
         <span class="option-letter">${letters[i]}</span>
         <span>${opt}</span>
       </div>
     `).join('');
   } else if (state.isMultiAnswer) {
     optionsList.innerHTML = q.options.map((opt, i) => `
-      <div class="option multi" data-index="${i}" onclick="toggleMultiOption(${i})">
+      <div class="option multi" data-index="${i}" onclick="toggleMultiOption(${i})" style="font-size:${currentFontLevel.optionSize}px">
         <span class="option-check">${letters[i]}</span>
         <span>${opt}</span>
       </div>
@@ -413,7 +457,7 @@ function renderQuestion() {
     `;
   } else {
     optionsList.innerHTML = q.options.map((opt, i) => `
-      <div class="option" data-index="${i}" onclick="selectOption(${i})">
+      <div class="option" data-index="${i}" onclick="selectOption(${i})" style="font-size:${currentFontLevel.optionSize}px">
         <span class="option-letter">${letters[i]}</span>
         <span>${opt}</span>
       </div>

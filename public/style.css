@@ -348,6 +348,48 @@ input:checked + .slider:before {
   background-color: white;
 }
 
+/* ===== Font Size Controls ===== */
+.font-size-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.font-btn {
+  width: 28px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.font-btn:hover {
+  border-color: var(--primary);
+  background: var(--bg-card-hover);
+}
+
+.font-btn:active {
+  transform: scale(0.95);
+}
+
+.font-size-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  min-width: 14px;
+  text-align: center;
+}
+
+/* ===== Quiz Container ===== */
 .quiz-container {
   padding: 12px;
   padding-bottom: 80px; /* Space for sticky action buttons */
@@ -897,5 +939,18 @@ input:checked + .slider:before {
   
   .mode-name {
     font-size: 12px;
+  }
+}
+
+/* ===== Font Size Controls Mobile ===== */
+@media (max-width: 480px) {
+  .font-btn {
+    width: 24px;
+    height: 20px;
+    font-size: 10px;
+  }
+  
+  .font-size-label {
+    font-size: 9px;
   }
 }
