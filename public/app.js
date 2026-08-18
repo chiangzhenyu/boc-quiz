@@ -12,12 +12,20 @@ const state = {
   // Sync state
   syncCode: '',
   syncEnabled: false,
-  syncStatus: 'unknown', // 'unknown', 'enabled', 'disabled'
+  syncStatus: 'unknown',
+  // Cumulative stats
+  cumulativeStats: {
+    totalAttempted: 0,
+    totalCorrect: 0,
+    categoryStats: {},
+  },
+  statsRefreshInterval: null,
 };
 
 const STORAGE_KEY = 'boc_quiz_progress';
 const SYNC_CODE_KEY = 'boc_quiz_sync_code';
 const SYNC_STATUS_KEY = 'boc_quiz_sync_enabled';
+const CUMULATIVE_STATS_KEY = 'boc_quiz_cumulative_stats';
 
 // ===== Storage =====
 function saveProgress() {
@@ -27,6 +35,7 @@ function saveProgress() {
     totalCorrect: state.userAnswers.filter(a => a.correct).length,
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+  localStorage.setItem(CUMULATIVE_STATS_KEY, JSON.stringify(state.cumulativeStats));
 }
 
 function loadProgress() {
@@ -44,6 +53,20 @@ function loadProgress() {
   state.syncCode = localStorage.getItem(SYNC_CODE_KEY) || '';
   const syncEnabled = localStorage.getItem(SYNC_STATUS_KEY);
   state.syncEnabled = syncEnabled === 'true';
+  
+  // Load cumulative stats
+  try {
+    const savedStats = localStorage.getItem(CUMULATIVE_STATS_KEY);
+    if (savedStats) {
+      state.cumulativeStats = JSON.parse(savedStats);
+    }
+  } catch (e) {
+    state.cumulativeStats = {
+      totalAttempted: 0,
+      totalCorrect: 0,
+      categoryStats: {},
+    };
+  }
 }
 
 // ===== Sync Functions =====
@@ -161,6 +184,11 @@ function showPage(pageId) {
 }
 
 function goHome() {
+  // Clear stats refresh interval
+  if (state.statsRefreshInterval) {
+    clearInterval(state.statsRefreshInterval);
+    state.statsRefreshInterval = null;
+  }
   showPage('home');
   loadCategories();
   updateWrongCount();
@@ -366,14 +394,26 @@ function recordAnswer(selected, isCorrect) {
     category: q.category,
   };
 
+  // Update cumulative stats
+  state.cumulativeStats.totalAttempted++;
   if (isCorrect) {
     state.score++;
+    state.cumulativeStats.totalCorrect++;
     document.getElementById('score-count').textContent = state.score;
   } else {
     const existing = state.wrongBook.find(wb => wb.id === q.id);
     if (!existing) {
       state.wrongBook.push(q);
     }
+  }
+
+  // Update category stats
+  if (!state.cumulativeStats.categoryStats[q.category]) {
+    state.cumulativeStats.categoryStats[q.category] = { total: 0, correct: 0 };
+  }
+  state.cumulativeStats.categoryStats[q.category].total++;
+  if (isCorrect) {
+    state.cumulativeStats.categoryStats[q.category].correct++;
   }
 
   saveProgress();
@@ -692,22 +732,28 @@ function showSyncInput() {
 // ===== Stats Page =====
 function showStats() {
   showPage('stats');
-  const attempted = state.userAnswers.length;
-  const correct = state.userAnswers.filter(a => a.correct).length;
+  
+  // Clear any existing refresh interval
+  if (state.statsRefreshInterval) {
+    clearInterval(state.statsRefreshInterval);
+  }
+  
+  renderStats();
+  
+  // Auto-refresh every 2 seconds
+  state.statsRefreshInterval = setInterval(renderStats, 2000);
+}
+
+function renderStats() {
+  const attempted = state.cumulativeStats.totalAttempted;
+  const correct = state.cumulativeStats.totalCorrect;
   const rate = attempted > 0 ? Math.round((correct / attempted) * 100) : 0;
   
-  const categories = {};
-  state.userAnswers.forEach(a => {
-    if (!categories[a.category]) {
-      categories[a.category] = { total: 0, correct: 0 };
-    }
-    categories[a.category].total++;
-    if (a.correct) categories[a.category].correct++;
-  });
+  const categories = state.cumulativeStats.categoryStats || {};
 
   let categoryHtml = '';
   for (const [cat, stats] of Object.entries(categories)) {
-    const catRate = Math.round((stats.correct / stats.total) * 100);
+    const catRate = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
     categoryHtml += `
       <div class="knowledge-item">
         <div style="display:flex;justify-content:space-between;align-items:center;">
