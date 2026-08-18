@@ -9,9 +9,15 @@ const state = {
   knowledgeIndex: 0,
   knowledgeData: [],
   isMultiAnswer: false,
+  // Sync state
+  syncCode: '',
+  syncEnabled: false,
+  syncStatus: 'unknown', // 'unknown', 'enabled', 'disabled'
 };
 
 const STORAGE_KEY = 'boc_quiz_progress';
+const SYNC_CODE_KEY = 'boc_quiz_sync_code';
+const SYNC_STATUS_KEY = 'boc_quiz_sync_enabled';
 
 // ===== Storage =====
 function saveProgress() {
@@ -33,6 +39,119 @@ function loadProgress() {
   } catch (e) {
     state.wrongBook = [];
   }
+  
+  // Load sync code
+  state.syncCode = localStorage.getItem(SYNC_CODE_KEY) || '';
+  const syncEnabled = localStorage.getItem(SYNC_STATUS_KEY);
+  state.syncEnabled = syncEnabled === 'true';
+}
+
+// ===== Sync Functions =====
+async function checkSyncStatus() {
+  try {
+    const res = await fetch('/api/sync/status');
+    const data = await res.json();
+    state.syncStatus = data.enabled ? 'enabled' : 'disabled';
+    state.syncEnabled = data.enabled;
+    localStorage.setItem(SYNC_STATUS_KEY, data.enabled ? 'true' : 'false');
+    return data.enabled;
+  } catch (e) {
+    state.syncStatus = 'disabled';
+    state.syncEnabled = false;
+    return false;
+  }
+}
+
+async function generateSyncCode() {
+  try {
+    const res = await fetch('/api/sync/status');
+    const data = await res.json();
+    if (!data.enabled) {
+      alert('同步功能未配置，请联系管理员');
+      return null;
+    }
+    
+    // Generate a random 8-character code
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) {
+      code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    
+    state.syncCode = code;
+    localStorage.setItem(SYNC_CODE_KEY, code);
+    
+    // Save initial progress
+    await syncToCloud();
+    
+    return code;
+  } catch (e) {
+    alert('生成同步码失败: ' + e.message);
+    return null;
+  }
+}
+
+async function syncToCloud() {
+  if (!state.syncEnabled || !state.syncCode) return;
+  
+  try {
+    const stats = {
+      totalAttempted: state.userAnswers.length,
+      totalCorrect: state.userAnswers.filter(a => a.correct).length,
+    };
+    
+    const res = await fetch('/api/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        syncCode: state.syncCode,
+        wrongBook: state.wrongBook,
+        stats: stats,
+      }),
+    });
+    
+    const data = await res.json();
+    if (data.success) {
+      console.log('✅ 同步成功');
+      return true;
+    } else {
+      console.error('❌ 同步失败:', data.error);
+      return false;
+    }
+  } catch (e) {
+    console.error('❌ 同步错误:', e);
+    return false;
+  }
+}
+
+async function syncFromCloud(syncCode) {
+  if (!state.syncEnabled) {
+    alert('同步功能未配置');
+    return false;
+  }
+  
+  try {
+    const res = await fetch(`/api/sync/${syncCode}`);
+    const data = await res.json();
+    
+    if (data.success) {
+      // Restore progress
+      state.wrongBook = data.data.wrong_book || [];
+      state.syncCode = syncCode;
+      localStorage.setItem(SYNC_CODE_KEY, syncCode);
+      
+      // Save to localStorage too
+      saveProgress();
+      
+      return true;
+    } else {
+      alert('未找到该同步码对应的数据');
+      return false;
+    }
+  } catch (e) {
+    alert('同步失败: ' + e.message);
+    return false;
+  }
 }
 
 // ===== Navigation =====
@@ -45,6 +164,7 @@ function goHome() {
   showPage('home');
   loadCategories();
   updateWrongCount();
+  updateSyncUI();
 }
 
 // ===== Load Categories =====
@@ -155,7 +275,6 @@ function renderQuestion() {
   state.isMultiAnswer = isMultiChoice(q);
   
   if (isTrueFalse(q)) {
-    // True/False - use radio buttons
     optionsList.innerHTML = q.options.map((opt, i) => `
       <div class="option" data-index="${i}" onclick="selectOption(${i})">
         <span class="option-letter">${letters[i]}</span>
@@ -163,19 +282,16 @@ function renderQuestion() {
       </div>
     `).join('');
   } else if (state.isMultiAnswer) {
-    // Multiple choice - use checkboxes
     optionsList.innerHTML = q.options.map((opt, i) => `
       <div class="option multi" data-index="${i}" onclick="toggleMultiOption(${i})">
         <span class="option-check">${letters[i]}</span>
         <span>${opt}</span>
       </div>
     `).join('');
-    // Add confirm button for multi-choice
     optionsList.innerHTML += `
       <button class="btn btn-primary" onclick="confirmMultiAnswer()" style="margin-top: 12px;">确认选择</button>
     `;
   } else {
-    // Single choice - use radio buttons
     optionsList.innerHTML = q.options.map((opt, i) => `
       <div class="option" data-index="${i}" onclick="selectOption(${i})">
         <span class="option-letter">${letters[i]}</span>
@@ -199,8 +315,6 @@ function renderQuestion() {
 
 function selectOption(index) {
   const q = state.questions[state.currentIndex];
-  
-  // Check if already answered
   if (state.userAnswers[state.currentIndex]) return;
 
   const isCorrect = index === q.answer;
@@ -211,22 +325,16 @@ function selectOption(index) {
 
 function toggleMultiOption(index) {
   const q = state.questions[state.currentIndex];
-  
-  // Check if already answered
   if (state.userAnswers[state.currentIndex]) return;
 
-  // Toggle selection
   const options = document.querySelectorAll('.option.multi');
   options[index].classList.toggle('selected');
 }
 
 function confirmMultiAnswer() {
   const q = state.questions[state.currentIndex];
-  
-  // Check if already answered
   if (state.userAnswers[state.currentIndex]) return;
 
-  // Get selected indices
   const selected = [];
   const options = document.querySelectorAll('.option.multi');
   options.forEach((opt, i) => {
@@ -240,10 +348,7 @@ function confirmMultiAnswer() {
     return;
   }
 
-  // Get correct answers
   const correctAnswers = Array.isArray(q.answer) ? q.answer : [q.answer];
-  
-  // Check if all selected are correct and all correct are selected
   const isCorrect = selected.length === correctAnswers.length && 
     selected.every(s => correctAnswers.includes(s));
 
@@ -265,7 +370,6 @@ function recordAnswer(selected, isCorrect) {
     state.score++;
     document.getElementById('score-count').textContent = state.score;
   } else {
-    // Add to wrong book
     const existing = state.wrongBook.find(wb => wb.id === q.id);
     if (!existing) {
       state.wrongBook.push(q);
@@ -274,6 +378,9 @@ function recordAnswer(selected, isCorrect) {
 
   saveProgress();
   updateWrongCount();
+  
+  // Auto-sync to cloud
+  syncToCloud();
 }
 
 function showAnswerFeedback(q, selected, isCorrect) {
@@ -472,12 +579,114 @@ function clearWrongBook() {
     state.wrongBook = [];
     saveProgress();
     updateWrongCount();
+    syncToCloud();
     showWrongBook();
   }
 }
 
 function updateWrongCount() {
   document.getElementById('wrong-count').textContent = `${state.wrongBook.length} 道错题`;
+}
+
+// ===== Sync UI =====
+function updateSyncUI() {
+  // Add sync UI to home page if not already there
+  const syncSection = document.getElementById('sync-section');
+  if (!syncSection) {
+    const container = document.querySelector('#home .container');
+    const syncHtml = `
+      <div id="sync-section" class="section">
+        <h2 class="section-title">☁️ 云端同步</h2>
+        <div class="sync-card">
+          <div id="sync-status-off" style="display:none;">
+            <p style="color:var(--text-muted);margin-bottom:12px;">开启云端同步，在任何设备都能恢复你的错题本和进度</p>
+            <button class="btn btn-primary" onclick="enableSync()">开启同步</button>
+          </div>
+          <div id="sync-status-on" style="display:none;">
+            <div class="sync-info">
+              <span class="sync-label">同步码</span>
+              <span class="sync-code" id="sync-code-display"></span>
+            </div>
+            <p style="color:var(--text-muted);font-size:12px;margin-top:8px;">在新设备上输入此同步码即可恢复进度</p>
+            <div class="sync-actions">
+              <button class="btn btn-secondary" onclick="copySyncCode()">复制同步码</button>
+              <button class="btn btn-secondary" onclick="showSyncInput()">同步到其他设备</button>
+            </div>
+          </div>
+          <div id="sync-status-loading">
+            <p style="color:var(--text-muted);">检查同步状态...</p>
+          </div>
+        </div>
+      </div>
+    `;
+    container.insertAdjacentHTML('beforeend', syncHtml);
+  }
+  
+  updateSyncDisplay();
+}
+
+function updateSyncDisplay() {
+  const offEl = document.getElementById('sync-status-off');
+  const onEl = document.getElementById('sync-status-on');
+  const loadingEl = document.getElementById('sync-status-loading');
+  const codeDisplay = document.getElementById('sync-code-display');
+  
+  if (!offEl || !onEl || !loadingEl) return;
+  
+  loadingEl.style.display = 'none';
+  
+  if (state.syncEnabled && state.syncCode) {
+    offEl.style.display = 'none';
+    onEl.style.display = 'block';
+    if (codeDisplay) codeDisplay.textContent = state.syncCode;
+  } else if (state.syncEnabled) {
+    // Sync enabled but no code yet
+    offEl.style.display = 'block';
+    onEl.style.display = 'none';
+  } else {
+    // Sync not configured
+    offEl.style.display = 'none';
+    onEl.style.display = 'none';
+    loadingEl.style.display = 'block';
+    loadingEl.innerHTML = '<p style="color:var(--text-muted);">同步功能未配置（服务器端 Supabase 未设置）</p>';
+  }
+}
+
+async function enableSync() {
+  if (!state.syncEnabled) {
+    alert('服务器未配置 Supabase，无法开启同步功能');
+    return;
+  }
+  
+  const code = await generateSyncCode();
+  if (code) {
+    updateSyncDisplay();
+    alert(`同步已开启！\n你的同步码是：${code}\n\n请牢记此码，换设备时输入即可恢复进度。`);
+  }
+}
+
+function copySyncCode() {
+  if (state.syncCode) {
+    navigator.clipboard.writeText(state.syncCode).then(() => {
+      alert('同步码已复制到剪贴板！');
+    }).catch(() => {
+      prompt('请复制以下同步码：', state.syncCode);
+    });
+  }
+}
+
+function showSyncInput() {
+  const code = prompt('请输入同步码：');
+  if (code && code.length === 8) {
+    syncFromCloud(code).then(success => {
+      if (success) {
+        alert('同步成功！错题本已恢复。');
+        updateSyncDisplay();
+      }
+    });
+  } else if (code) {
+    alert('同步码格式不正确，应为8位字符');
+  }
 }
 
 // ===== Stats Page =====
@@ -541,4 +750,6 @@ function shuffleArray(arr) {
 
 // ===== Init =====
 loadProgress();
-goHome();
+checkSyncStatus().then(() => {
+  goHome();
+});

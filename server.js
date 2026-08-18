@@ -1,11 +1,13 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const supabaseLib = require('./lib/supabase');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Serve static files
+// Middleware
+app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // API: Get all categories and question counts
@@ -67,6 +69,63 @@ app.get('/api/questions', (req, res) => {
   }
   
   res.json(allQuestions);
+});
+
+// ===== Sync APIs =====
+
+// API: Check sync status
+app.get('/api/sync/status', (req, res) => {
+  res.json({
+    enabled: supabaseLib.isConfigured,
+    message: supabaseLib.isConfigured ? '同步功能已启用' : '同步功能未配置',
+  });
+});
+
+// API: Save progress
+app.post('/api/sync', async (req, res) => {
+  try {
+    const { syncCode, wrongBook, stats } = req.body;
+    
+    if (!syncCode) {
+      return res.status(400).json({ error: '同步码不能为空' });
+    }
+    
+    if (!supabaseLib.isConfigured) {
+      return res.status(503).json({ error: '同步功能未配置' });
+    }
+    
+    const data = await supabaseLib.saveProgress(syncCode, wrongBook || [], stats || {});
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('Sync save error:', error);
+    res.status(500).json({ error: '保存失败: ' + error.message });
+  }
+});
+
+// API: Load progress
+app.get('/api/sync/:code', async (req, res) => {
+  try {
+    const syncCode = req.params.code;
+    
+    if (!syncCode) {
+      return res.status(400).json({ error: '同步码不能为空' });
+    }
+    
+    if (!supabaseLib.isConfigured) {
+      return res.status(503).json({ error: '同步功能未配置' });
+    }
+    
+    const data = await supabaseLib.loadProgress(syncCode);
+    
+    if (!data) {
+      return res.status(404).json({ error: '未找到该同步码对应的数据' });
+    }
+    
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('Sync load error:', error);
+    res.status(500).json({ error: '加载失败: ' + error.message });
+  }
 });
 
 // Start server

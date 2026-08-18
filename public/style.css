@@ -514,6 +514,47 @@ html, body {
   text-align: center;
 }
 
+/* ===== Sync ===== */
+.sync-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.sync-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sync-label {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.sync-code {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  color: var(--primary);
+  background: var(--bg-input);
+  padding: 6px 16px;
+  border-radius: var(--radius-sm);
+  letter-spacing: 2px;
+}
+
+.sync-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.sync-actions .btn {
+  flex: 1;
+  text-align: center;
+}
+
 /* ===== Stats ===== */
 .stats-content {
   display: flex;
