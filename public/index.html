@@ -15,7 +15,13 @@
         <div class="hero">
           <div class="hero-icon">📚</div>
           <h1>BOC 题库练习</h1>
-          <p class="subtitle">银行从业资格考试 · 669 题</p>
+          <p class="subtitle">银行从业资格考试 · 995 题</p>
+        </div>
+        
+        <div id="continue-section" style="display:none; text-align:center; margin: 20px 0;">
+          <button class="btn btn-primary" onclick="continueSession()" style="width:100%;">
+            🔄 继续上次进度
+          </button>
         </div>
         
         <div class="section">
@@ -57,6 +63,10 @@
         <button class="btn-back" onclick="goHome()">← 返回</button>
         <div class="quiz-progress">
           <span id="current-num">1</span> / <span id="total-num">10</span>
+        </div>
+        <div class="question-jump">
+          <input type="number" id="question-jumper" min="1" max="10" value="1" 
+                 onkeydown="if(event.key==='Enter') jumpToQuestion()">
         </div>
         <div class="quiz-score">✅ <span id="score-count">0</span></div>
       </div>

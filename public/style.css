@@ -257,10 +257,31 @@ html, body {
   color: var(--text-muted);
 }
 
-.quiz-score {
+.question-jump input {
+  width: 50px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text);
   font-size: 14px;
-  font-weight: 600;
-  color: var(--success);
+  text-align: center;
+  font-family: inherit;
+}
+
+.question-jump input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* Hide number input spinners */
+.question-jump input::-webkit-outer-spin-button,
+.question-jump input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.question-jump input[type=number] {
+  -moz-appearance: textfield;
 }
 
 .quiz-container {

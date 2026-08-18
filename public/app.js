@@ -26,6 +26,7 @@ const STORAGE_KEY = 'boc_quiz_progress';
 const SYNC_CODE_KEY = 'boc_quiz_sync_code';
 const SYNC_STATUS_KEY = 'boc_quiz_sync_enabled';
 const CUMULATIVE_STATS_KEY = 'boc_quiz_cumulative_stats';
+const SESSION_KEY = 'boc_quiz_session';
 
 // ===== Storage =====
 function saveProgress() {
@@ -36,6 +37,58 @@ function saveProgress() {
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
   localStorage.setItem(CUMULATIVE_STATS_KEY, JSON.stringify(state.cumulativeStats));
+}
+
+// ===== Session Persistence =====
+function saveSession() {
+  if (state.categoryMode && state.questions.length > 0) {
+    const session = {
+      categoryMode: state.categoryMode,
+      currentIndex: state.currentIndex,
+      questions: state.questions,
+      userAnswers: state.userAnswers,
+      score: state.score,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  }
+}
+
+function loadSession() {
+  try {
+    const saved = localStorage.getItem(SESSION_KEY);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    return null;
+  }
+  return null;
+}
+
+function hasValidSession() {
+  const session = loadSession();
+  if (session && session.questions && session.questions.length > 0 && session.currentIndex < session.questions.length) {
+    return true;
+  }
+  return false;
+}
+
+function continueSession() {
+  const session = loadSession();
+  if (session) {
+    state.categoryMode = session.categoryMode;
+    state.currentIndex = session.currentIndex;
+    state.questions = session.questions;
+    state.userAnswers = session.userAnswers;
+    state.score = session.score;
+    showPage('quiz');
+    renderQuestion();
+  }
+}
+
+function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
 }
 
 function loadProgress() {
@@ -193,6 +246,16 @@ function goHome() {
   loadCategories();
   updateWrongCount();
   updateSyncUI();
+  
+  // Show/hide continue button based on saved session
+  const continueSection = document.getElementById('continue-section');
+  if (continueSection) {
+    if (hasValidSession()) {
+      continueSection.style.display = 'block';
+    } else {
+      continueSection.style.display = 'none';
+    }
+  }
 }
 
 // ===== Load Categories =====
@@ -217,6 +280,7 @@ async function loadCategories() {
 
 // ===== Quiz Logic =====
 async function startCategory(category) {
+  clearSession(); // 清除上次的进度
   state.categoryMode = category;
   try {
     const res = await fetch(`/api/questions/${category}`);
@@ -231,6 +295,7 @@ async function startCategory(category) {
 }
 
 async function startMixedMode() {
+  clearSession(); // 清除上次的进度
   state.categoryMode = null;
   try {
     const res = await fetch('/api/questions');
@@ -339,6 +404,13 @@ function renderQuestion() {
   } else {
     nextBtn.textContent = '下一题';
   }
+
+  // Update question jumper input
+  const jumperInput = document.getElementById('question-jumper');
+  if (jumperInput) {
+    jumperInput.value = state.currentIndex + 1;
+    jumperInput.max = state.questions.length;
+  }
 }
 
 function selectOption(index) {
@@ -418,6 +490,7 @@ function recordAnswer(selected, isCorrect) {
 
   saveProgress();
   updateWrongCount();
+  saveSession(); // 保存当前进度，支持断点续做
   
   // Auto-sync to cloud
   syncToCloud();
@@ -473,6 +546,17 @@ function prevQuestion() {
   if (state.currentIndex > 0) {
     state.currentIndex--;
     renderQuestion();
+  }
+}
+
+function jumpToQuestion() {
+  const input = document.getElementById('question-jumper');
+  if (input) {
+    const num = parseInt(input.value);
+    if (num >= 1 && num <= state.questions.length) {
+      state.currentIndex = num - 1;
+      renderQuestion();
+    }
   }
 }
 
